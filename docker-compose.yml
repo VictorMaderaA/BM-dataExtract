@@ -1,0 +1,20 @@
+version: '3'
+
+networks:
+  pyetl:
+    driver: bridge
+#    driver: host # for local use of vpn
+
+services:
+  app:
+    container_name: pyetl
+    build:
+      context: .
+      dockerfile: etc/python.dockerfile
+    entrypoint: ["python"]
+#    volumes:
+#      - ./data:/app/data
+    networks:
+      - pyetl
+
+# TO DEPLOY RUN <sudo docker-compose build> AND RECREATE FROM PORTAINER
