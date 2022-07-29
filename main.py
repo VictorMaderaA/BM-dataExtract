@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-URL = '' # TODO place here the api url
+URL = 'https://app.bonosturisticoscomunidaddemadrid.es'
 DIRNAME = os.path.dirname(__file__)
 
 print('Extracting data from {}...'.format(URL))
@@ -12,7 +12,8 @@ print('Extracting data from {}...'.format(URL))
 
 def changeFilerPermissions(filePath):
     # Remove read only permissions
-    os.system('chmod -R 777 {}'.format(filePath))
+    # os.system('chmod -R 777 {}'.format(filePath))
+    pass
 
 
 def downloadFileFromUlr(url, fileName):
@@ -38,7 +39,7 @@ def dictToCsv(dict, fileName):
     filePath = '{}/out/{}'.format(DIRNAME, fileName)
     with open(filePath, 'w') as f:
         for key, value in dict.items():
-            f.write('{},{}\n'.format(key, value))
+            f.write('{};{}\n'.format(key, value))
     changeFilerPermissions(filePath)
 
 
@@ -62,7 +63,7 @@ def downloadFiles(row, path, attrName):
             downloadFiles(row[key], path, '{}_{}'.format(attrName, key))
         return row
     # Is row a string?
-    elif isinstance(row, str):
+    elif isinstance(row, str) and 'null' not in row:
         downloadFileFromUlr(URL + row, '{}/{}_{}'.format(path, attrName, row.split('/')[-1]))
 
 
@@ -100,24 +101,31 @@ while startDate <= endDate:
         row = dict(zip(headers, row))
 
         fileAttributes = [
-            'dniAdjunto',
-            'documentoDeReservaOriginal',
-            'documentoFirmado',
-            'documentoDeAprobacion',
-            'documentosDeJustificacion'
-            'documentoOrdenDeAprobacionDelPago',
-            'documentoPoderesEmpresa',
-            'documentoMinimisEmpresa',
+            ('dniAdjunto', '01_dniAdjunto'),
+            ('documentoDeReserva', '02_documentoDeReserva'),
+            ('documentoDeReservaOriginal', '03_documentoDeReservaOriginal'),
+            ('documentoFirmado', '04_documentoFirmado'),
+            ('documentoDeAprobacion', '05_documentoDeAprobacion'),
+            ('documentosDeJustificacion', '06_documentosDeJustificacion'),
+            ('documentosDeJustificacionOriginales', '07_documentosDeJustificacionOriginales'),
+            ('documentoOrdenDeAprobacionDelPago', '08_documentoOrdenDeAprobacionDelPago'),
+            ('documentoPoderesEmpresa', '09_documentoPoderesEmpresa'),
+            ('documentoMinimisEmpresa', '10_documentoMinimisEmpresa'),
         ]
 
         # create folder if not exists
         if not os.path.exists('{}/out/{}'.format(DIRNAME, row['id'])):
             os.makedirs('{}/out/{}'.format(DIRNAME, row['id']))
 
-        for fileAttribute in fileAttributes:
+        for fileTuple in fileAttributes:
+            fileAttribute = fileTuple[0]
+            fileDirName = fileTuple[1]
+            if not os.path.exists('{}/out/{}/{}'.format(DIRNAME, row['id'], fileDirName)):
+                os.makedirs('{}/out/{}/{}'.format(DIRNAME, row['id'], fileDirName))
+
             # Does row[fileAttribute] exists and is not empty?
             if fileAttribute in row and row[fileAttribute] is not None:
-                downloadFiles(row[fileAttribute], '/{}'.format(row['id']), fileAttribute)
+                downloadFiles(row[fileAttribute], '/{}/{}'.format(row['id'], fileDirName), fileAttribute)
                 row[fileAttribute] = convertToUrl(row[fileAttribute])
 
         # Create csv file with data
